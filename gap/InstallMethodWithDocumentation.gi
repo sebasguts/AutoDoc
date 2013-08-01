@@ -349,7 +349,7 @@ end );
 InstallGlobalFunction( CreateAutomaticDocumentation,
 
   function( arg )
-    local package_name, name_documentation_file, path_to_xmlfiles, create_full_docu, introduction_list, entities, 
+    local package_name, name_documentation_file, path_to_xmlfiles, introduction_list,
           dependencies, intro, chapter_record, section_stream, intro_string, group_names, current_group;
     
     package_name := arg[ 1 ];
@@ -361,8 +361,6 @@ InstallGlobalFunction( CreateAutomaticDocumentation,
     if IsString( path_to_xmlfiles ) then
         path_to_xmlfiles := Directory( path_to_xmlfiles );
     fi;
-    
-    create_full_docu := arg[ 4 ];
     
     CreateDefaultChapterData( package_name );
     
@@ -390,49 +388,11 @@ InstallGlobalFunction( CreateAutomaticDocumentation,
     ## Creating a header for the xml file.
     AppendTo( AUTOMATIC_DOCUMENTATION.documentation_headers_main_file, AUTODOC_XML_HEADER );
     
-    if Length( arg ) = 5 then
+    if Length( arg ) = 4 then
         
-        if Length( arg[ 5 ] ) > 0 then
-            
-            if IsString( arg[ 5 ][ 1 ] ) then
-                
-                entities := arg[ 5 ];
-                
-            elif IsList( arg[ 5 ][ 1 ] ) and not IsString( arg[ 5 ][ 1 ] ) then
-                
-                introduction_list := arg[ 5 ];
-                
-            fi;
-            
-        fi;
+        introduction_list := arg[ 4 ];
         
-    elif Length( arg ) = 6 then
-        
-        introduction_list := arg[ 5 ];
-        
-        entities := arg[ 6 ];
-        
-    fi;
-    
-    if create_full_docu then
-        
-        CreateTitlePage( package_name );
-        
-        if IsBound( entities ) then
-            
-            CreateMainPage( package_name, entities );
-            
-        else
-            
-            CreateMainPage( package_name );
-            
-        fi;
-        
-    fi;
-    
-    if IsBound( introduction_list ) then
-      
-        for intro in arg[ 5 ] do
+        for intro in introduction_list do
             
             if Length( intro ) = 2 then
                 
@@ -610,7 +570,7 @@ function( arg )
     fi;
     
     # Let AutoDoc generate additional input for GAPDoc
-    args := [ pkg, opt.autodoc_output, Filename(opt.dir, ""), false ];
+    args := [ pkg, opt.autodoc_output, Filename(opt.dir, "") ];
     if IsBound(opt.section_intros) then
         Add(args, opt.section_intros);
     fi;
