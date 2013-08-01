@@ -46,6 +46,9 @@ DeclareGlobalVariable( "AUTOMATIC_DOCUMENTATION" );
 ##
 DeclareGlobalFunction( "CreateAutomaticDocumentation" );
 
+
+DeclareGlobalFunction( "GenerateDocumentation" );
+
 ##
 ## This function creates a title file. It must be called with the package name and the path to doc files.
 DeclareGlobalFunction( "CreateTitlePage" );

@@ -491,6 +491,108 @@ InstallGlobalFunction( CreateAutomaticDocumentation,
 
 end );
 
+
+# GenerateDocumentation(pkg, scaffold[, opt])
+#  pkg: name of the package for which we generate docs
+#  scaffold: bool, whether to create scaffolding like doc/title.xml
+#  opt: record with optional settings:
+#    opt.path
+#    opt.TODO
+#    ...
+#    opt.gapdoc_main
+#    opt.gapdoc_files
+#    opt.gapdoc_bookname
+#
+# TODO: Find better name!!! In particular, in contrast to CreateAutomaticDocumentation and MakeGAPDocDoc...
+#
+# TODO: Make this usable w/o AutoDoc, too, i.e. avoid calling CreateAutomaticDocumentation???
+#   then again, if we put this into AutoDoc, there is no major need for that, as long
+#    as CreateAutomaticDocumentation does nothing if no autodoc apis are used...
+InstallGlobalFunction( GenerateDocumentation,
+function( arg )
+    local pkg, scaffold, opt, args, d, rel_d, files;
+    
+    pkg := arg[1];
+    scaffold := arg[2];
+    if Length(arg) >= 3 then
+        opt := arg[3];
+    else
+        opt := rec();
+    fi;
+    
+    if not IsBound(opt.dir) then
+        opt.dir := Directory("doc");
+    elif IsString(opt.dir) then
+        opt.dir := Directory(opt.dir);
+    fi;
+
+    if not IsBound(opt.gapdoc_main) then
+        opt.gapdoc_main := pkg;
+    fi;
+
+    if not IsBound(opt.gapdoc_files) then
+        opt.gapdoc_files := [];
+        # PackageInfo.g  ?  resp.  ../PackageInfo.g
+    fi;
+
+    if IsBound(opt.gapdoc_scan_dirs) then
+        # opt.gapdoc_scan_dirs should be a list of dirs to scan, relative
+        # to opt.dir. For example: [ "../gap", "../lib", "../gap/more" ]
+        for d in opt.gapdoc_scan_dirs do
+            rel_d := Directory(Filename( opt.dir, d ));
+            if not IsDirectoryPath(Filename(rel_d, "")) then
+                continue;
+            fi;
+            d := Directory(d);
+            files := DirectoryContents(rel_d);
+            # Need to filter out "." and ".."
+            # TODO: Perhaps restrict to files whose name matches (.+)\.{g,gi,gd} or so?
+            files := Filtered( files, x -> Length(x) >= 3 );
+            files := List( files, x -> Filename(d, x) );
+            Append( opt.gapdoc_files, files );
+        od;
+    fi;
+
+    if not IsBound(opt.gapdoc_bookname) then
+        opt.gapdoc_bookname := pkg;
+    fi;
+
+    if not IsBound(opt.autodoc_output) then
+        opt.autodoc_output := Filename(opt.dir, "autodoc.out");
+    fi;
+
+    # Ensure the autodoc output file gets scanned by GAPDoc
+    # FIXME: There's a problem here: opt.autodoc_output is
+    # relative to the current dir, which is what AutoDoc expect.
+    # But MakeGAPDocDoc expects a path relative to opt.dir.
+    # So we need to convert between those.. yuck
+    Add(opt.gapdoc_files, opt.autodoc_output);
+    
+    
+    # Let AutoDoc generate additional input for GAPDoc
+    args := [ pkg, opt.autodoc_output, Filename(opt.dir, ""), scaffold];
+    if IsBound(opt.section_intros) then
+        Add(args, opt.section_intros);
+    fi;
+    if IsBound(opt.entities) then
+        Add(args, opt.entities);
+    fi;
+    CallFuncList(CreateAutomaticDocumentation, args);
+
+    SetGapDocLaTeXOptions( "utf8" );
+
+    # FIXME: Really always enable the following? Perhaps only if a certain opt. flag is set?
+    PrintTo( "VERSION", PackageInfo( pkg )[1].Version );
+
+    MakeGAPDocDoc( opt.dir, opt.gapdoc_main, opt.gapdoc_files, opt.gapdoc_bookname, "MathJax" );
+
+    CopyHTMLStyleFiles( Filename(opt.dir, "") );
+
+    GAPDocManualLab( pkg );
+end );
+
+
+
 ##
 ## Call this with arguments name, tester, description, arguments. The last one is optional
 InstallGlobalFunction( DeclareCategoryWithDocumentation,
