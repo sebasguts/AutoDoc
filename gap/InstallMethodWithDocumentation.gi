@@ -530,7 +530,7 @@ end );
 #    as CreateAutomaticDocumentation does nothing if no autodoc apis are used...
 InstallGlobalFunction( GenerateDocumentation,
 function( arg )
-    local pkg, scaffold, opt, args, d, rel_d, files;
+    local pkg, scaffold, opt, args, d, rel_d, files, ret;
     
     pkg := arg[1];
     scaffold := arg[2];
@@ -587,7 +587,17 @@ function( arg )
     # But MakeGAPDocDoc expects a path relative to opt.dir.
     # So we need to convert between those.. yuck
     Add(opt.gapdoc_files, opt.autodoc_output);
-    
+
+    # Ensure the output directory exists
+    d := Filename(opt.dir, "");
+    if not IsDirectoryPath(d) then
+        ret := CreateDir(d); # Note: CreateDir is a currently undocumented GAP API
+        if ret = fail then
+            Error("Cannot create directory ",d,"\nError message: ",
+                LastSystemError().message,"\n");
+            return false;
+        fi;
+    fi;
     
     # Let AutoDoc generate additional input for GAPDoc
     args := [ pkg, opt.autodoc_output, Filename(opt.dir, ""), scaffold];
@@ -609,6 +619,8 @@ function( arg )
     CopyHTMLStyleFiles( Filename(opt.dir, "") );
 
     GAPDocManualLab( pkg );
+
+    return true;
 end );
 
 
