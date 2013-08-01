@@ -478,6 +478,7 @@ end );
 #  opt: record with optional settings:
 #    opt.path
 #    opt.TODO
+#    opt.do_not_print_VERSION: if bound with value <> false, version will not be printed.
 #    ...
 #    opt.gapdoc_main
 #    opt.gapdoc_files
@@ -578,8 +579,9 @@ function( arg )
 
     SetGapDocLaTeXOptions( "utf8" );
 
-    # FIXME: Really always enable the following? Perhaps only if a certain opt. flag is set?
-    PrintTo( "VERSION", PackageInfo( pkg )[1].Version );
+    if IsBound( opt.do_not_print_VERSION ) and opt.do_not_print_VERSION <> false then
+        PrintTo( "VERSION", PackageInfo( pkg )[1].Version );
+    fi;
 
     MakeGAPDocDoc( opt.dir, opt.gapdoc_main, opt.gapdoc_files, opt.gapdoc_bookname, "MathJax" );
 
