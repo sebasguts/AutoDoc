@@ -176,7 +176,7 @@ end );
 InstallGlobalFunction( CreateMainPage,
                        
   function( arg )
-    local package_name, entities, filestream, i;
+    local package_name, entities, filestream, i, incl, package_info;
     
     package_name := arg[ 1 ];
     
@@ -234,8 +234,23 @@ InstallGlobalFunction( CreateMainPage,
     AppendTo( filestream, "<Body>\n" );
     
     AppendTo( filestream, Concatenation( "<Index>&", package_name, ";</Index>\n" ) );
-    
-    AppendTo( filestream, "<#Include SYSTEM \"AutoDocMainFile.xml\">\n" );
+
+# TODO: Move "AutoDocMainFile.xml" to a global constant, and/or make it customizable?
+# It is also referenced in CreateAutomaticDocumentation()
+
+    incl := [ "AutoDocMainFile.xml" ];
+
+# TODO: Put non-auto-generated content before or after AutoDocMainFile.xml? Perhaps
+# even allow ordering freely?
+
+    package_info := PackageInfo( package_name )[ 1 ];
+    if IsBound(package_info.AutoDoc) and IsBound(package_info.AutoDoc.ExtraIncludes) then
+        Append( incl, package_info.AutoDoc.ExtraIncludes );
+    fi;
+
+    for i in incl do
+        AppendTo( filestream, "<#Include SYSTEM \"", i, "\">\n" );
+    od;
     
     AppendTo( filestream, "</Body>\n<TheIndex/>\n</Book>" );
     
