@@ -598,14 +598,21 @@ function( arg )
             return false;
         fi;
     fi;
+
+    if scaffold then
+        AUTOMATIC_DOCUMENTATION.path_to_xmlfiles := opt.dir;
+        CreateTitlePage( pkg );
+        if IsBound( opt.entities ) then
+            CreateMainPage( pkg, opt.entities );
+        else
+            CreateMainPage( pkg );
+        fi;
+    fi;
     
     # Let AutoDoc generate additional input for GAPDoc
-    args := [ pkg, opt.autodoc_output, Filename(opt.dir, ""), scaffold];
+    args := [ pkg, opt.autodoc_output, Filename(opt.dir, ""), false ];
     if IsBound(opt.section_intros) then
         Add(args, opt.section_intros);
-    fi;
-    if IsBound(opt.entities) then
-        Add(args, opt.entities);
     fi;
     CallFuncList(CreateAutomaticDocumentation, args);
 
