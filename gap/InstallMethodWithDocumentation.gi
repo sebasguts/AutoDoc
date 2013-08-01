@@ -113,6 +113,11 @@ InstallGlobalFunction( CreateTitlePage,
     indent := indent - 1;
     Out( "</TitleComment>\n" );
     
+# FIXME: Why include VERSION file? Wouldn't it make more sense
+# to output the content of  package_info.Version ?
+# One drawback of doing that is that it cause the XML file to change each time
+# we update the version... but is that a problem?
+    #Out( "<Version>Version ", package_info.Version, "</Version>\n" );
     Out( "<Version>Version <#Include SYSTEM \"../VERSION\"></Version>\n" );
     
     for author_records in package_info.Persons do
