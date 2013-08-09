@@ -11,9 +11,10 @@
 
 
 
-# Documentation for this global variable can be found in gap/AutoDocDocEntries.g
-# respectively in the manual.
 
+## This is the main storage variable in AutoDoc.
+## It stores the streams to files, the grouped items, and some global settings.
+##
 DeclareGlobalVariable( "AUTOMATIC_DOCUMENTATION" );
 
 

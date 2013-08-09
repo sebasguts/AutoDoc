@@ -447,7 +447,7 @@ InstallGlobalFunction( CreateAutomaticDocumentation,
 
   function( arg )
     local package_name, name_documentation_file, path_to_xmlfiles, create_full_docu, introduction_list, entities, 
-          dependencies, intro, chapter_record, section_stream, intro_string, group_names, current_group;
+          dependencies, intro, chapter_record, section_stream, intro_string, group_names, current_group, current_group_chapter_info;
     
     package_name := arg[ 1 ];
     
@@ -577,7 +577,13 @@ InstallGlobalFunction( CreateAutomaticDocumentation,
         
         current_group := AUTOMATIC_DOCUMENTATION.grouped_items.(group_names);
         
-        AutoDoc_WriteGroupedEntry( AUTOMATIC_DOCUMENTATION.documentation_stream, current_group.label_hash, current_group.elements, current_group.return_value, current_group.description, current_group.label_list );
+        current_group_chapter_info := current_group.chapter_info;
+        
+        CreateNewSectionXMLFile( current_group_chapter_info[ 1 ], current_group_chapter_info[ 2 ] );
+        
+        AutoDoc_WriteGroupedEntry( AUTOMATIC_DOCUMENTATION.documentation_headers.(current_group_chapter_info[ 1 ]).sections.(current_group_chapter_info[ 2 ]),
+                                   current_group.label_hash, current_group.elements, current_group.return_value, current_group.description,
+                                   current_group.label_list );
         
     od;
     

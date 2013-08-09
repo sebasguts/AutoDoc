@@ -264,17 +264,23 @@ InstallGlobalFunction( AutoDoc_CreateCompleteEntry,
                                                                  label_list := label_list,
                                                                 );
         
-        CreateNewSectionXMLFile( chapter_info[ 1 ], chapter_info[ 2 ] );
+#         CreateNewSectionXMLFile( chapter_info[ 1 ], chapter_info[ 2 ] );
+#         
+#         AutoDoc_WriteEntry( AUTOMATIC_DOCUMENTATION.documentation_headers.(chapter_info[ 1 ]).sections.(chapter_info[ 2 ]),
+#                             label_hash, argument_record.type, arguments, name, tester_names, return_value, description, label_list );
         
-        AppendTo( AUTOMATIC_DOCUMENTATION.documentation_headers.(chapter_info[ 1 ]).sections.(chapter_info[ 2 ]),
-                  "<#Include Label=\"", label_hash, "\">\n" );
+#         AppendTo( AUTOMATIC_DOCUMENTATION.documentation_headers.(chapter_info[ 1 ]).sections.(chapter_info[ 2 ]),
+#                   "<#Include Label=\"", label_hash, "\">\n" );
         
     elif not is_grouped then
         
         CreateNewSectionXMLFile( chapter_info[ 1 ], chapter_info[ 2 ] );
         
-        AppendTo( AUTOMATIC_DOCUMENTATION.documentation_headers.(chapter_info[ 1 ]).sections.(chapter_info[ 2 ]),
-                  "<#Include Label=\"", label_hash, "\">\n" );
+        AutoDoc_WriteEntry( AUTOMATIC_DOCUMENTATION.documentation_headers.(chapter_info[ 1 ]).sections.(chapter_info[ 2 ]),
+                            label_hash, argument_record.type, arguments, name, tester_names, return_value, description, label_list );
+        
+#         AppendTo( AUTOMATIC_DOCUMENTATION.documentation_headers.(chapter_info[ 1 ]).sections.(chapter_info[ 2 ]),
+#                   "<#Include Label=\"", label_hash, "\">\n" );
         
     fi;
         
@@ -290,12 +296,6 @@ InstallGlobalFunction( AutoDoc_CreateCompleteEntry,
         
         grouping.label_list := Concatenation( grouping.label_list, label_list );
         
-    else
-        
-        doc_stream := AUTOMATIC_DOCUMENTATION.documentation_stream;
-        
-        AutoDoc_WriteEntry( doc_stream, label_hash, argument_record.type, arguments, name, tester_names, return_value, description, label_list );
-    
     fi;
     
     return true;
@@ -383,11 +383,11 @@ InstallGlobalFunction( AutoDoc_WriteEntry,
   function( doc_stream, label, type, arguments, name, tester_names, return_value, description, label_for_mansection )
     local i;
     
-    AppendTo( doc_stream, "##  <#GAPDoc Label=\"", label , "\">\n" );
-    AppendTo( doc_stream, "##  <ManSection" );
+#     AppendTo( doc_stream, "<#GAPDoc Label=\"", label , "\">\n" );
+    AppendTo( doc_stream, "<ManSection" );
     Perform( label_for_mansection, function( i ) AppendTo( doc_stream, " Label=\"", i, "\"" ); end );
     AppendTo( doc_stream, ">\n" );
-    AppendTo( doc_stream, "##    <", type );
+    AppendTo( doc_stream, "  <", type );
     
     if arguments <> fail then
         AppendTo( doc_stream, " Arg=\"", arguments, "\"" );
@@ -402,21 +402,21 @@ InstallGlobalFunction( AutoDoc_WriteEntry,
     AppendTo( doc_stream, "/>\n" );
     
     if return_value <> false then
-        AppendTo( doc_stream, "##    <Returns>", return_value, "</Returns>\n" );
+        AppendTo( doc_stream, "  <Returns>", return_value, "</Returns>\n" );
     fi;
     
-    AppendTo( doc_stream, "##    <Description>\n" );
+    AppendTo( doc_stream, "  <Description>\n" );
     
     for i in description do
         
-        AppendTo( doc_stream, Concatenation( [ "##      ", i, "\n" ] ) );
+        AppendTo( doc_stream, Concatenation( [ "    ", i, "\n" ] ) );
         
     od;
     
-    AppendTo( doc_stream, "##    </Description>\n" );
-    AppendTo( doc_stream, "##  </ManSection>\n" );
-    AppendTo( doc_stream, "##  <#/GAPDoc>\n" );
-    AppendTo( doc_stream, "##\n\n" );
+    AppendTo( doc_stream, "  </Description>\n" );
+    AppendTo( doc_stream, "</ManSection>\n" );
+#     AppendTo( doc_stream, "<#/GAPDoc>\n" );
+    AppendTo( doc_stream, "\n\n" );
     
 end );
 
@@ -426,14 +426,14 @@ InstallGlobalFunction( AutoDoc_WriteGroupedEntry,
   function( doc_stream, label, list_of_type_arg_name_testernames, return_value, description, label_list )
     local i;
     
-    AppendTo( doc_stream, "##  <#GAPDoc Label=\"", label , "\">\n" );
-    AppendTo( doc_stream, "##  <ManSection" );
+#     AppendTo( doc_stream, "<#GAPDoc Label=\"", label , "\">\n" );
+    AppendTo( doc_stream, "<ManSection" );
     Perform( label_list, function( i ) AppendTo( doc_stream, " Label=\"", i, "\"" ); end );
     AppendTo( doc_stream, ">\n" );
     
     for i in list_of_type_arg_name_testernames do
         
-         AppendTo( doc_stream, "##    <", i[ 1 ], " " );
+         AppendTo( doc_stream, "  <", i[ 1 ], " " );
         
         if i[ 2 ] <> fail and i[ 1 ] <> "Var" then
             AppendTo( doc_stream, "Arg=\"", i[ 2 ], "\" " );
@@ -450,20 +450,20 @@ InstallGlobalFunction( AutoDoc_WriteGroupedEntry,
     od;
     
     if return_value <> false then
-        AppendTo( doc_stream, "##    <Returns>", return_value, "</Returns>\n" );
+        AppendTo( doc_stream, "  <Returns>", return_value, "</Returns>\n" );
     fi;
     
-    AppendTo( doc_stream, "##    <Description>\n" );
+    AppendTo( doc_stream, "  <Description>\n" );
     
     for i in description do
         
-        AppendTo( doc_stream, Concatenation( [ "##      ", i, "\n" ] ) );
+        AppendTo( doc_stream, Concatenation( [ "    ", i, "\n" ] ) );
         
     od;
     
-    AppendTo( doc_stream, "##    </Description>\n" );
-    AppendTo( doc_stream, "##  </ManSection>\n" );
-    AppendTo( doc_stream, "##  <#/GAPDoc>\n" );
-    AppendTo( doc_stream, "##\n\n" );
+    AppendTo( doc_stream, "  </Description>\n" );
+    AppendTo( doc_stream, "</ManSection>\n" );
+#     AppendTo( doc_stream, "##  <#/GAPDoc>\n" );
+    AppendTo( doc_stream, "\n\n" );
     
 end );

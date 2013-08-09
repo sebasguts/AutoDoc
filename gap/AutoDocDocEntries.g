@@ -21,14 +21,6 @@ CreateDocEntryForGlobalFunction(
     [ "The_main_functions", "The_main_function" ]
 );
 
-CreateDocEntryForGlobalVariable(
-    "AUTOMATIC_DOCUMENTATION",
-    [
-    "This global variable stores all the streams and some additional data, like chapter names.",
-    ],
-    [ "The_main_functions", "Global_variable" ]
-);
-
 CreateDocEntryForGlobalFunction(
     "DeclareOperationWithDocumentation",
     [
