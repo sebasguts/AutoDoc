@@ -74,6 +74,14 @@ BindGlobal( "TheTypeOfDocumentationTreeNodesForGroup",
         NewType( TheFamilyOfDocumentationTreeNodes,
                 IsTreeForDocumentationNodeForGroupRep ) );
 
+## DeclareRepresentation
+DeclareRepresentation( "IsTreeForDocumentationDummyNodeRep",
+                       IsTreeForDocumentationNodeRep,
+                       [ ] );
+
+BindGlobal( "TheTypeOfDocumentationTreeDummyNodes", 
+        NewType( TheFamilyOfDocumentationTreeNodes,
+                IsTreeForDocumentationNodeForGroupRep ) );
 
 
 ###################################
@@ -92,7 +100,9 @@ InstallMethod( DocumentationTree,
     tree := rec(
                   nodes := [ ],
                   nodes_by_name := rec( ),
-                  groups := rec( )
+                  groups := rec( ),
+                  dummies := rec( ),
+                  contents_for_dummies := rec( )
             );
     
     ObjectifyWithAttributes( tree,
@@ -250,6 +260,21 @@ InstallMethod( MergeGroupEntries,
     
 end );
 
+InstallMethod( DocumentationDummy,
+               [ IsString, IsList ],
+               
+  function( name, chapter_info )
+    local node;
+    
+    node := rec( chapter_info := chapter_info );
+    
+    ObjectifyWithAttributes( node, TheTypeOfDocumentationTreeDummyNodes,
+                             Name, name );
+    
+    return node;
+    
+end );
+
 ####################################
 ##
 ## Add functions
@@ -300,6 +325,28 @@ InstallMethod( SectionInTree,
     chapter!.nodes_by_name.( section_name ) := section;
     
     return section;
+    
+end );
+
+##
+InstallMethod( Add,
+               "for dummy fillers",
+               [ IsTreeForDocumentation, IsTreeForDocumentationNodeRep and HasDummyName ],
+               
+  function( tree, node )
+    local name;
+    
+    name := Name( node );
+    
+    if IsBound( tree!.dummies.(name) ) then
+        
+        tree!.dummies!.(name).content := node;
+        
+    else
+        
+        tree!.contents_for_dummies.(name) := node;
+        
+    fi;
     
 end );
 
@@ -389,6 +436,42 @@ InstallMethod( Add,
     
     ## FIXME: This might be irrelevant.
     entry_node!.nodes_by_name.( name ) := node;
+    
+end );
+
+##
+InstallMethod( Add,
+               "for dummy nodes",
+               [ IsTreeForDocumentation, IsTreeForDocumentationDummyNodeRep ],
+               
+  function( tree, node )
+    local name, entry_node, chapter_info;
+    
+    chapter_info := node!.chapter_info;
+    
+    name := Name( node );
+    
+    if IsBound( tree!.contents_for_dummies.(name) ) then
+        
+        node!.content := tree!.contents_for_dummies.(name);
+        
+    fi;
+    
+    if Length( chapter_info ) > 1 then
+        
+        entry_node := SectionInTree( tree, chapter_info[ 1 ], chapter_info[ 2 ] );
+        
+    else
+        
+        entry_node := ChapterInTree( tree, chapter_info[ 1 ] );
+        
+    fi;
+    
+    Add( entry_node!.nodes, node );
+    
+    entry_node!.nodes_by_name.(name) := node;
+    
+    tree!.dummies.(name) := node;
     
 end );
 
@@ -596,5 +679,19 @@ InstallMethod( WriteDocumentation,
     entry_list := node!.content_list;
     
     AutoDoc_WriteDocEntry( filestream, entry_list );
+    
+end );
+
+##
+InstallMethod( WriteDocumentation,
+               [ IsTreeForDocumentationDummyNodeRep, IsStream ],
+               
+  function( node, filestream )
+    
+    if IsBound( node!.content ) then
+        
+        WriteDocumentation( node!.content, filestream );
+        
+    fi;
     
 end );
