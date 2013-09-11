@@ -84,17 +84,19 @@ end );
 InstallGlobalFunction( AutoDoc_Flush,
                        
   function( current_item )
-    local type, length_arg_list;
+    local type, length_arg_list, system, node;
+    
+    system := ValueOption( "system_name" );
     
     type := current_item[ 1 ];
     
     if type = "Chapter" then
         
-        Add( AUTOMATIC_DOCUMENTATION.tree, DocumentationText( current_item[ 3 ], [ current_item[ 2 ] ] ) );
+        node := DocumentationText( current_item[ 3 ], [ current_item[ 2 ] ] );
         
     elif type = "Section" then
         
-        Add( AUTOMATIC_DOCUMENTATION.tree, DocumentationText( current_item[ 4 ], [ current_item[ 2 ], current_item[ 3 ] ] ) );
+        node := DocumentationText( current_item[ 4 ], [ current_item[ 2 ], current_item[ 3 ] ] );
         
     elif type = "Item" then
         
@@ -124,7 +126,21 @@ InstallGlobalFunction( AutoDoc_Flush,
             
         fi;
         
-        Add( AUTOMATIC_DOCUMENTATION.tree, DocumentationItem( current_item[ 2 ] ) );
+        node := DocumentationItem( current_item[ 2 ] );
+        
+    fi;
+    
+    if IsBound( node ) then
+        
+        if system <> fail then
+            
+            SetDummyName( node, system );
+            
+            PushOptions( rec( system_name := fail ) );
+            
+        fi;
+        
+        Add( AUTOMATIC_DOCUMENTATION.tree, node );
         
     fi;
     
@@ -483,6 +499,22 @@ InstallGlobalFunction( AutoDoc_Parser_ReadFile,
             recover_item();
             
             PushOptions( rec( level_value := 0 ) );
+            
+        end,
+        
+        @InsertSystem := function()
+            
+            AutoDoc_Flush( current_item );
+            
+            Add( AUTOMATIC_DOCUMENTATION.tree, DocumentationDummy( current_command[ 2 ], chapter_info ) );
+            
+            recover_item();
+            
+        end,
+        
+        @System := function()
+            
+            PushOptions( rec( system_name := current_command[ 2 ] ) );
             
         end
     
