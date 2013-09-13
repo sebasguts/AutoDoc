@@ -32,7 +32,7 @@ end );
 InstallGlobalFunction( AutoDoc_Scan_for_command,
                        
   function( string )
-    local command_pos, rest_of_string, i , command_list;
+    local command_pos, rest_of_string, i , command_list, space_pos;
     
     command_pos := PositionSublist( string, "@" );
     
@@ -44,39 +44,19 @@ InstallGlobalFunction( AutoDoc_Scan_for_command,
     
     string := string{ [ command_pos .. Length( string ) ] };
     
-    command_list := [ "@ChapterInfo",
-                      "@AutoDoc",
-                      "@EndAutoDoc",
-                      "@Chapter",
-                      "@Section",
-                      "@EndSection",
-                      "@BeginGroup",
-                      "@EndGroup",
-                      "@Description",
-                      "@Returns",
-                      "@Arguments",
-                      "@Group",
-                      "@Label",
-                      "@Level",
-                      "@ResetLevel",
-                      "@BREAK"
-                    ];
-                      
-    for i in command_list do
-        
-        command_pos := PositionSublist( string, i );
-        
-        if command_pos <> fail then
-            
-            return [ i, AutoDoc_RemoveSpacesAndComments( string{[ command_pos + Length( i ) .. Length( string ) ] } ) ];
-            
-        fi;
-        
-    od;
+    NormalizeWhitespace( string );
     
-    Error( "Unrecognized command" );
+    space_pos := PositionSublist( string, " " );
     
-    return fail;
+    if space_pos <> fail then
+        
+        return [ string{[ 1 .. space_pos - 1 ]}, AutoDoc_RemoveSpacesAndComments( string{[ space_pos + 1 .. Length( string ) ] } ) ];
+        
+    else
+        
+        return [ string, "" ];
+        
+    fi;
     
 end );
 
@@ -576,8 +556,23 @@ InstallGlobalFunction( AutoDoc_Parser_ReadFile,
             
             Add( AUTOMATIC_DOCUMENTATION.tree, DocumentationExample( content_string_list, chapter_info ) );
             
+            recover_item();
+            
+        end,
+        
+        ##FIXME: This is hacky! You can do this better.
+        @Author := function()
+            
+            PushOptions( rec( AutoDoc_Author := current_command[ 2 ] ) );
+            
+        end,
+        
+        @Title := function()
+            
+            PushOptions( rec( AutoDoc_Title := current_command[ 2 ] ) );
+            
         end
-    
+        
     );
     
     filestream := InputTextFile( filename );

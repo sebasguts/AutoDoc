@@ -47,3 +47,5 @@ DeclareGlobalFunction( "SetCurrentAutoDocSection" );
 DeclareGlobalFunction( "ResetCurrentAutoDocSection" );
 
 DeclareGlobalFunction( "WriteStringIntoDoc" );
+
+DeclareGlobalFunction( "AutoDocWorksheet" );

@@ -603,3 +603,79 @@ InstallGlobalFunction( WriteStringIntoDoc,
     Add( AUTOMATIC_DOCUMENTATION.tree, DocumentationText( description, chapter_info ) );
     
 end );
+
+InstallGlobalFunction( AutoDocWorksheet,
+                       
+  function( filename )
+    local folder, folder_length, filestream, plain_filename, title, author;
+    
+    folder := StructuralCopy( filename );
+    
+    while folder[ Length( folder ) ] <> '/' do
+        
+        Remove( folder, Length( folder ) );
+        
+    od;
+    
+    folder_length := Length( folder );
+    
+    folder := Directory( folder );
+    
+    AUTOMATIC_DOCUMENTATION.tree := DocumentationTree();
+    
+    AUTOMATIC_DOCUMENTATION.path_to_xmlfiles := folder;
+    
+    AutoDoc_Parser_ReadFile( filename );
+    
+    WriteDocumentation( AUTOMATIC_DOCUMENTATION.tree, folder );
+    
+    plain_filename := filename{[ folder_length + 1 .. Length( filename ) ]};
+    
+    filestream := AUTODOC_OutputTextFile( folder, Concatenation( plain_filename, ".xml" ) );
+    
+    AppendTo( filestream, AUTODOC_XML_HEADER );
+    
+    AppendTo( filestream, "<!DOCTYPE Book SYSTEM \"gapdoc.dtd\"\n[\n", "]\n>\n" );
+    
+    AppendTo( filestream, "<Book Name=\"", plain_filename, "\">\n" );
+    
+    AppendTo( filestream, "<TitlePage>\n" );
+    
+    title := ValueOption( "AutoDoc_Title" );
+    
+    if title <> fail then
+        
+        AppendTo( filestream, "<Title>", title, "</Title>\n" );
+        
+    fi;
+    
+    author := ValueOption( "AutoDoc_Author" );
+    
+    if author <> fail then
+        
+        AppendTo( filestream, "<Author>", author, "</Author>\n" );
+        
+    fi;
+    
+    AppendTo( filestream, "</TitlePage>" );
+    
+    AppendTo( filestream, "<Body>\n" );
+    
+    AppendTo( filestream, "<#Include SYSTEM \"AutoDocMainFile.xml\">\n" );
+    
+    AppendTo( filestream, "</Body>\n" );
+    
+    AppendTo( filestream, "</Book>\n" );
+    
+    CloseStream( filestream );
+    
+    SetGapDocLaTeXOptions( "utf8" );
+    
+    MakeGAPDocDoc( folder, plain_filename, [ ], plain_filename, "MathJax" );
+    
+    CopyHTMLStyleFiles( Filename( folder, "" ) );
+    
+    return true;
+    
+end );
+
