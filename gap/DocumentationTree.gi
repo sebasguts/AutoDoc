@@ -81,7 +81,16 @@ DeclareRepresentation( "IsTreeForDocumentationDummyNodeRep",
 
 BindGlobal( "TheTypeOfDocumentationTreeDummyNodes", 
         NewType( TheFamilyOfDocumentationTreeNodes,
-                IsTreeForDocumentationNodeForGroupRep ) );
+                IsTreeForDocumentationDummyNodeRep ) );
+
+## DeclareRepresentation
+DeclareRepresentation( "IsTreeForDocumentationExampleNodeRep",
+                       IsTreeForDocumentationNodeRep,
+                       [ ] );
+
+BindGlobal( "TheTypeOfDocumentationTreeExampleNodes", 
+        NewType( TheFamilyOfDocumentationTreeNodes,
+                IsTreeForDocumentationExampleNodeRep ) );
 
 
 ###################################
@@ -240,6 +249,31 @@ InstallMethod( DocumentationItem,
     
 end );
 
+##
+InstallMethod( DocumentationExample,
+               [ IsList, IsList ],
+               
+  function( string_list, chapter_info )
+    local level, node;
+    
+    level := ValueOption( "level_value" );
+    
+    if level = fail then
+        
+        level := 0;
+        
+    fi;
+    
+    node := rec( content := string_list,
+                 level := level );
+    
+    ObjectifyWithAttributes( node, TheTypeOfDocumentationTreeExampleNodes,
+                             ChapterInfo, chapter_info );
+    
+    return node;
+    
+end );
+
 ## This method is going to have side effects on its first argument.
 ## So no readding would be necessary. This should only be used internally.
 ## The side effects are also the reason why this is not called Concatenation.
@@ -363,6 +397,32 @@ InstallMethod( Add,
         return;
         
     fi;
+    
+    chapter_info := ChapterInfo( node );
+    
+    if Length( chapter_info ) = 1 then
+        
+        entry_node := ChapterInTree( tree, chapter_info[ 1 ] );
+        
+    else
+        
+        entry_node := SectionInTree( tree, chapter_info[ 1 ], chapter_info[ 2 ] );
+        
+    fi;
+    
+    ResetFilterObj( entry_node, IsEmptyNode );
+    
+    Add( entry_node!.nodes, node );
+    
+end );
+
+##
+InstallMethod( Add,
+               "for example nodes",
+               [ IsTreeForDocumentation, IsTreeForDocumentationExampleNodeRep ],
+               
+  function( tree, node )
+    local chapter_info, entry_node;
     
     chapter_info := ChapterInfo( node );
     
@@ -693,5 +753,32 @@ InstallMethod( WriteDocumentation,
         WriteDocumentation( node!.content, filestream );
         
     fi;
+    
+end );
+
+##
+InstallMethod( WriteDocumentation,
+               [ IsTreeForDocumentationExampleNodeRep, IsStream ],
+               
+  function( node, filestream )
+    local contents, i;
+    
+    if node!.level > ValueOption( "level_value" ) then
+        
+        return;
+        
+    fi;
+    
+    contents := node!.content;
+    
+    AppendTo( filestream, "<Example><![CDATA[\n" );
+    
+    for i in contents do
+        
+        AppendTo( filestream, i, "\n" );
+        
+    od;
+    
+    AppendTo( filestream, "]]></Example>\n\n" );
     
 end );

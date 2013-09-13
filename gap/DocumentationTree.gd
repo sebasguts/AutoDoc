@@ -53,6 +53,9 @@ DeclareOperation( "DocumentationItem",
 DeclareOperation( "DocumentationDummy",
                   [ IsString, IsList ] );
 
+DeclareOperation( "DocumentationExample",
+                  [ IsList, IsList ] );
+
 ######################################
 ##
 ## Build methods

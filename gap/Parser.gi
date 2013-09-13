@@ -292,7 +292,7 @@ InstallGlobalFunction( AutoDoc_Parser_ReadFile,
           has_filters, filter_string, current_command, current_string_list,
           scope_chapter, scope_section, scope_group, current_type, autodoc_counter,
           position_parentesis, is_autodoc_scope, command_function_record, recover_item,
-          level_value;
+          level_value, read_example;
     
     recover_item := function( )
       
@@ -316,6 +316,55 @@ InstallGlobalFunction( AutoDoc_Parser_ReadFile,
           
       fi;
       
+    end;
+    
+    #Needs to be done seperately, since now every line is parsed.
+    read_example := function()
+        local temp_string_list, temp_curr_line, temp_pos_comment;
+        
+        temp_string_list := [ ];
+        
+        while true do
+            
+            temp_curr_line := ReadLine( filestream );
+            
+            if filestream = fail or PositionSublist( temp_curr_line, "@EndExample" ) <> fail then
+                
+                break;
+                
+            fi;
+            
+            NormalizeWhitespace( temp_curr_line );
+            
+            ##if is comment, simply remove comments.
+            temp_pos_comment := PositionSublist( temp_curr_line, "#!" );
+            
+            if temp_pos_comment <> fail then
+                
+                temp_curr_line := temp_curr_line{[ temp_pos_comment + 2 .. Length( temp_curr_line ) ]};
+                
+                temp_curr_line := AutoDoc_RemoveSpacesAndComments( temp_curr_line );
+                
+                Add( temp_string_list, temp_curr_line );
+                
+                continue;
+                
+            else
+                
+                temp_curr_line := AutoDoc_RemoveSpacesAndComments( temp_curr_line );
+                
+                temp_curr_line := Concatenation( "gap> ", temp_curr_line );
+                
+                Add( temp_string_list, temp_curr_line );
+                
+                continue;
+                
+            fi;
+            
+        od;
+        
+        return temp_string_list;
+        
     end;
     
     #### Initialize the command_function_record
@@ -515,6 +564,17 @@ InstallGlobalFunction( AutoDoc_Parser_ReadFile,
         @System := function()
             
             PushOptions( rec( system_name := current_command[ 2 ] ) );
+            
+        end,
+        
+        @Example := function()
+            local content_string_list;
+            
+            AutoDoc_Flush( current_item );
+            
+            content_string_list := read_example();
+            
+            Add( AUTOMATIC_DOCUMENTATION.tree, DocumentationExample( content_string_list, chapter_info ) );
             
         end
     
