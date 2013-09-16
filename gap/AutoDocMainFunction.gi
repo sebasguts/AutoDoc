@@ -604,6 +604,7 @@ InstallGlobalFunction( WriteStringIntoDoc,
     
 end );
 
+##
 InstallGlobalFunction( AutoDocWorksheet,
                        
   function( filename )

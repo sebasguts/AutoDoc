@@ -48,4 +48,23 @@ DeclareGlobalFunction( "ResetCurrentAutoDocSection" );
 
 DeclareGlobalFunction( "WriteStringIntoDoc" );
 
+#! @Chapter AutoDoc worksheets
+#! @Section Worksheets
+
+#! @Description
+#!  This function takes a filename and returns a complete GAPDoc document created
+#!  out of the file. All AutoDoc commands can be used to create such a file. Also
+#!  there are some special tags, which have only effect in files if the files are parsed with
+#!  this command. Those commands are:
+#!  <List>
+#!  <Mark>Title <A>title</A></Mark>
+#!  <Item>
+#!    This adds a title to the document
+#!  </Item>
+#!  <Mark>Author <A>author</A></Mark>
+#!  <Item>
+#!    This adds an author to the document.
+#!  </Item>
+#!  </List>
+#!  Note that some commands have no effect, i.e. the level command.
 DeclareGlobalFunction( "AutoDocWorksheet" );
