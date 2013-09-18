@@ -194,20 +194,238 @@ InstallGlobalFunction( AutoDoc_Parser_ReadFiles,
     flush_and_recover := function()
         local node;
         
+        if not IsBound( current_item ) then
+            
+            return;
+            
+        fi;
+        
         node := DocumentationNode( current_item );
         
         Add( tree, node );
         
         current_item := rec( );
         
-        current_item!.chapter_info := chapter_info;
+        current_item.chapter_info := chapter_info;
         
-        current_item!.level := 0;
+        current_item.level := 0;
         
-        current_item!.node_type := "TEXT";
+        current_item.node_type := "TEXT";
         
-        current_item!.text := [ ];
+        current_item.text := [ ];
         
         current_string_list := current_item.text;
         
     end;
+    
+    command_function_record := rec(
+        
+        @AutoDoc := function()
+            
+            ##FIXME
+            
+        end,
+        
+        @EndAutoDoc := function()
+            
+            ##FIXME
+            
+        end,
+        
+        @Chapter := function()
+            local scope_chapter;
+            
+            scope_chapter := ReplacedString( current_command[ 2 ], " ", "_" );
+            
+            ChapterInTree( AUTOMATIC_DOCUMENTATION.tree, scope_chapter );
+            
+            chapter_info[ 1 ] := scope_chapter;
+            
+            Unbind( chapter_info[ 2 ] );
+            
+            flush_and_recover();
+            
+        end,
+        
+        @Section := function()
+            local scope_section;
+            
+            scope_section := ReplacedString( current_command[ 2 ], " ", "_" );
+            
+            SectionInTree( AUTOMATIC_DOCUMENTATION.tree, chapter_info[ 1 ], scope_section );
+            
+            chapter_info[ 2 ] := scope_section;
+            
+        end,
+        
+        @EndSection := function()
+            
+            if not IsBound( scope_section ) then
+                
+                Error( "No section set" );
+                
+            fi;
+            
+            if IsBound( current_item ) then current_item := AutoDoc_Flush( current_item ); fi;
+            
+            Unbind( scope_section );
+            
+            recover_item();
+            
+            Unbind( chapter_info[ 2 ] );
+            
+        end,
+        
+        @BeginGroup := function()
+            
+            if IsBound( current_item ) then current_item := AutoDoc_Flush( current_item ); fi;
+            
+            if current_command[ 2 ] = "" then
+                
+                AUTOMATIC_DOCUMENTATION.groupnumber := AUTOMATIC_DOCUMENTATION.groupnumber + 1;
+                
+                current_command[ 2 ] := Concatenation( "AutoDoc_generated_group", String( AUTOMATIC_DOCUMENTATION.groupnumber ) );
+                
+            fi;
+            
+            scope_group := ReplacedString( current_command[ 2 ], " ", "_" );
+            
+        end,
+        
+        @EndGroup := function()
+            
+            if IsBound( current_item ) then current_item := AutoDoc_Flush( current_item ); fi;
+            
+            recover_item();
+            
+            scope_group := false;
+            
+        end,
+        
+        @Description := function()
+            
+            current_item := AutoDoc_Prepare_Item_Record( current_item, chapter_info, scope_group );
+            
+            current_item[ 2 ].description := [ ];
+            
+            current_string_list := current_item[ 2 ].description;
+            
+            if current_command[ 2 ] <> "" then
+                
+                Add( current_string_list, current_command[ 2 ] );
+                
+            fi;
+            
+        end,
+        
+        @Returns := function()
+            
+            current_item := AutoDoc_Prepare_Item_Record( current_item, chapter_info, scope_group );
+            
+            current_item[ 2 ].return_value := current_command[ 2 ];
+            
+        end,
+        
+        @Arguments := function()
+            
+            current_item := AutoDoc_Prepare_Item_Record( current_item, chapter_info, scope_group );
+            
+            current_item[ 2 ].arguments := current_command[ 2 ];
+            
+        end,
+        
+        @Label := function()
+            
+            current_item := AutoDoc_Prepare_Item_Record( current_item, chapter_info, scope_group );
+            
+            current_item[ 2 ].function_label := current_command[ 2 ];
+            
+        end,
+        
+        @Group := function()
+            
+            current_item := AutoDoc_Prepare_Item_Record( current_item, chapter_info, scope_group );
+            
+            current_item[ 2 ].group := current_command[ 2 ];
+            
+        end,
+        
+        @ChapterInfo := function()
+            
+            current_item := AutoDoc_Prepare_Item_Record( current_item, chapter_info, scope_group );
+            
+            current_item[ 2 ].chapter_info := SplitString( current_command[ 2 ], "," );
+            
+            current_item[ 2 ].chapter_info := List( current_item[ 2 ].chapter_info, i -> ReplacedString( AutoDoc_RemoveSpacesAndComments( i ), " ", "_" ) );
+            
+        end,
+        
+        @BREAK := function()
+            
+            Error( current_command[ 2 ] );
+            
+        end,
+        
+        @Level := function()
+            
+            AutoDoc_Flush( current_item );
+            
+            recover_item();
+            
+            PushOptions( rec( level_value := Int( current_command[ 2 ] ) ) );
+            
+        end,
+        
+        @ResetLevel := function()
+            
+            AutoDoc_Flush( current_item );
+            
+            recover_item();
+            
+            PushOptions( rec( level_value := 0 ) );
+            
+        end,
+        
+        @InsertSystem := function()
+            
+            AutoDoc_Flush( current_item );
+            
+            Add( AUTOMATIC_DOCUMENTATION.tree, DocumentationDummy( current_command[ 2 ], chapter_info ) );
+            
+            recover_item();
+            
+        end,
+        
+        @System := function()
+            
+            PushOptions( rec( system_name := current_command[ 2 ] ) );
+            
+        end,
+        
+        @Example := function()
+            local content_string_list;
+            
+            AutoDoc_Flush( current_item );
+            
+            content_string_list := read_example();
+            
+            Add( AUTOMATIC_DOCUMENTATION.tree, DocumentationExample( content_string_list, chapter_info ) );
+            
+            recover_item();
+            
+        end,
+        
+        ##FIXME: This is hacky! You can do this better.
+        @Author := function()
+            
+            PushOptions( rec( AutoDoc_Author := current_command[ 2 ] ) );
+            
+        end,
+        
+        @Title := function()
+            
+            PushOptions( rec( AutoDoc_Title := current_command[ 2 ] ) );
+            
+        end
+        
+    );
