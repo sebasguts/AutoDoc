@@ -184,6 +184,55 @@ InstallMethod( DocumentationSection,
 end );
 
 ##
+InstallMethod( DocumentationNode,
+               [ IsRecord ],
+               
+  function( content )
+    local node, type;
+    
+    if not IsBound( content.node_type ) then
+        
+        Error( "node type must be set to create node" );
+        
+    fi;
+    
+    type := content.node_type;
+    
+    Unbind( content.node_type );
+    
+    if type = "TEXT" then
+        
+        node := DocumentationText( content.text, content.chapter_info );
+        
+        node!.level := content.level;
+        
+    elif type = "ITEM" then
+        
+        node := DocumentationItem( content );
+        
+    elif type := "EXAMPLE" then
+        
+        node := DocumentationExample( content.text, content.chapter_info );
+        
+        node!.level := content.level;
+        
+    elif type := "DUMMY" then
+        
+        node := DocumentationDummy( content.name, content.chapter_info );
+        
+        node!.level := content.level;
+        
+    else
+        
+        Error( "unrecognised type" );
+        
+    fi;
+    
+    return node;
+    
+end );
+
+##
 InstallMethod( DocumentationText,
                [ IsList, IsList ],
                

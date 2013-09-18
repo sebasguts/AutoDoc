@@ -44,6 +44,10 @@ DeclareOperation( "DocumentationChapter",
 DeclareOperation( "DocumentationSection",
                   [ IsString ] );
 
+## MetaOperation for the ones below.
+DeclareOperation( "DocumentationNode",
+                  [ IsRecord ] );
+
 DeclareOperation( "DocumentationText",
                   [ IsList, IsList ] );
 
