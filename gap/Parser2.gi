@@ -191,18 +191,41 @@ InstallGlobalFunction( AutoDoc_Parser_ReadFiles,
   function( filename_list, tree )
     local current_item, flush_and_recover, chapter_info, current_string_list;
     
-    flush_and_recover := function()
+    level_scope := 0;
+    
+    flush_and_prepare_for_item := function()
         local node;
         
-        if not IsBound( current_item ) then
+        if current_item.type = "ITEM" then
             
             return;
             
         fi;
         
-        node := DocumentationNode( current_item );
+        current_item := flush_and_recover();
         
-        Add( tree, node );
+        current_item.node_type := "ITEM";
+        
+        current_item.description := [ ];
+        
+        current_item.return_value := false;
+        
+        current_item.label_list := "";
+        
+        current_item.tester_names := "";
+        
+    end;
+    
+    flush_and_recover := function()
+        local node;
+        
+        if IsBound( current_item ) then
+            
+            node := DocumentationNode( current_item );
+            
+            Add( tree, node );
+            
+        fi;
         
         current_item := rec( );
         
@@ -215,6 +238,12 @@ InstallGlobalFunction( AutoDoc_Parser_ReadFiles,
         current_item.text := [ ];
         
         current_string_list := current_item.text;
+        
+        if IsBound( scope_group ) then
+            
+            current_item.group := scope_group;
+            
+        fi;
         
     end;
     
@@ -250,35 +279,31 @@ InstallGlobalFunction( AutoDoc_Parser_ReadFiles,
         @Section := function()
             local scope_section;
             
+            if not IsBound( chapter_info[ 1 ] ) then
+                
+                Error( "no section without chapter allowed" );
+                
+            fi;
+            
             scope_section := ReplacedString( current_command[ 2 ], " ", "_" );
             
             SectionInTree( AUTOMATIC_DOCUMENTATION.tree, chapter_info[ 1 ], scope_section );
             
             chapter_info[ 2 ] := scope_section;
             
+            flush_and_recover();
+            
         end,
         
         @EndSection := function()
             
-            if not IsBound( scope_section ) then
-                
-                Error( "No section set" );
-                
-            fi;
-            
-            if IsBound( current_item ) then current_item := AutoDoc_Flush( current_item ); fi;
-            
-            Unbind( scope_section );
-            
-            recover_item();
-            
             Unbind( chapter_info[ 2 ] );
+            
+            flush_and_recover();
             
         end,
         
         @BeginGroup := function()
-            
-            if IsBound( current_item ) then current_item := AutoDoc_Flush( current_item ); fi;
             
             if current_command[ 2 ] = "" then
                 
@@ -290,25 +315,23 @@ InstallGlobalFunction( AutoDoc_Parser_ReadFiles,
             
             scope_group := ReplacedString( current_command[ 2 ], " ", "_" );
             
+            flush_and_recover();
+            
         end,
         
         @EndGroup := function()
             
-            if IsBound( current_item ) then current_item := AutoDoc_Flush( current_item ); fi;
+            Unbind( scope_group );
             
-            recover_item();
-            
-            scope_group := false;
+            flush_and_recover();
             
         end,
         
         @Description := function()
             
-            current_item := AutoDoc_Prepare_Item_Record( current_item, chapter_info, scope_group );
+            flush_and_prepare_for_item();
             
-            current_item[ 2 ].description := [ ];
-            
-            current_string_list := current_item[ 2 ].description;
+            current_string_list := current_item.description;
             
             if current_command[ 2 ] <> "" then
                 
@@ -320,43 +343,43 @@ InstallGlobalFunction( AutoDoc_Parser_ReadFiles,
         
         @Returns := function()
             
-            current_item := AutoDoc_Prepare_Item_Record( current_item, chapter_info, scope_group );
+            flush_and_prepare_for_item();
             
-            current_item[ 2 ].return_value := current_command[ 2 ];
+            current_item.return_value := current_command[ 2 ];
             
         end,
         
         @Arguments := function()
             
-            current_item := AutoDoc_Prepare_Item_Record( current_item, chapter_info, scope_group );
+            flush_and_prepare_for_item();
             
-            current_item[ 2 ].arguments := current_command[ 2 ];
+            current_item.arguments := current_command[ 2 ];
             
         end,
         
         @Label := function()
             
-            current_item := AutoDoc_Prepare_Item_Record( current_item, chapter_info, scope_group );
+            flush_and_prepare_for_item();
             
-            current_item[ 2 ].function_label := current_command[ 2 ];
+            current_item.function_label := current_command[ 2 ];
             
         end,
         
         @Group := function()
             
-            current_item := AutoDoc_Prepare_Item_Record( current_item, chapter_info, scope_group );
+            flush_and_prepare_for_item();
             
-            current_item[ 2 ].group := current_command[ 2 ];
+            current_item.group := current_command[ 2 ];
             
         end,
         
         @ChapterInfo := function()
             
-            current_item := AutoDoc_Prepare_Item_Record( current_item, chapter_info, scope_group );
+            flush_and_prepare_for_item();
             
-            current_item[ 2 ].chapter_info := SplitString( current_command[ 2 ], "," );
+            current_item.chapter_info := SplitString( current_command[ 2 ], "," );
             
-            current_item[ 2 ].chapter_info := List( current_item[ 2 ].chapter_info, i -> ReplacedString( AutoDoc_RemoveSpacesAndComments( i ), " ", "_" ) );
+            current_item.chapter_info := List( current_item.chapter_info, i -> ReplacedString( AutoDoc_RemoveSpacesAndComments( i ), " ", "_" ) );
             
         end,
         
@@ -366,39 +389,41 @@ InstallGlobalFunction( AutoDoc_Parser_ReadFiles,
             
         end,
         
-        @Level := function()
+        @SetLevel := function()
             
-            AutoDoc_Flush( current_item );
+            level_scope := Int( current_command[ 2 ] );
             
-            recover_item();
-            
-            PushOptions( rec( level_value := Int( current_command[ 2 ] ) ) );
+            flush_and_recover();
             
         end,
         
         @ResetLevel := function()
             
-            AutoDoc_Flush( current_item );
+            level_scope := 0;
             
-            recover_item();
+            flush_and_recover();
             
-            PushOptions( rec( level_value := 0 ) );
+        end,
+        
+        @Level := function()
+            
+            current_item.level := Int( current_command[ 2 ] );
             
         end,
         
         @InsertSystem := function()
             
-            AutoDoc_Flush( current_item );
+            flush_and_recover();
             
             Add( AUTOMATIC_DOCUMENTATION.tree, DocumentationDummy( current_command[ 2 ], chapter_info ) );
-            
-            recover_item();
             
         end,
         
         @System := function()
             
-            PushOptions( rec( system_name := current_command[ 2 ] ) );
+            flush_and_recover();
+            
+            system_scope := current_command[ 2 ];
             
         end,
         
