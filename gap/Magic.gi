@@ -529,6 +529,7 @@ function( arg )
         
         AUTODOC_WriteOnce( maketest, "commands", [ ] );
         AUTODOC_WriteOnce( maketest, "book_name", gapdoc.main );
+        AUTODOC_WriteOnce( maketest, "package_name", pkg);
         
         CreateMakeTest( maketest );
     fi;

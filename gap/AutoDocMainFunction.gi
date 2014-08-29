@@ -593,7 +593,7 @@ end );
 InstallGlobalFunction( CreateMakeTest,
                        
   function( argument_rec )
-    local filename, folder, filestream, i, scan_dir, book_name, scan_list;
+    local package_name, filename, folder, filestream, i, scan_dir, book_name, scan_list;
     
     if IsBound( argument_rec.files_to_scan ) then
         
@@ -631,6 +631,12 @@ InstallGlobalFunction( CreateMakeTest,
     
     AppendTo( filestream, "## Changes will be discarded by the next call of the AutoDoc method.\n\n\n" );
     
+    package_name := argument_rec.package_name; #Lets the package be loaded by the testing environment
+
+    AppendTo( filestream, "LoadPackage( \"");
+    AppendTo( filestream, package_name);
+    AppendTo( filestream, "\" );\n\n");
+
     if IsBound( argument_rec.commands ) and IsList( argument_rec.commands ) then
         
         if IsString( argument_rec.commands ) and argument_rec.commands <> [ ] then
