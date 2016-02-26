@@ -97,7 +97,8 @@ function( arg )
           opt, scaffold, gapdoc, maketest, autodoc,
           doc_dir, doc_dir_rel, tmp, key, val, file,
           title_page, tree, is_worksheet,
-          position_document_class, gapdoc_latex_option_record;
+          position_document_class, gapdoc_latex_option_record,
+          gap_root_path, make_gap_doc_doc_argument_list;
 
     if Length( arg ) >= 3 then
         Error( "too many arguments" );
@@ -165,13 +166,26 @@ function( arg )
     # Check for user supplied options. If present, they take
     # precedence over any defaults as well as the opt record.
     #
-    for key in [ "dir", "scaffold", "autodoc", "gapdoc", "maketest" ] do
+    for key in [ "dir", "scaffold", "autodoc", "gapdoc", "maketest", "gap_root_path" ] do
         val := ValueOption( key );
         if val <> fail then
             opt.(key) := val;
         fi;
     od;
-
+    
+    gap_root_path := false;
+    if IsBound( opt.gap_root_path ) then
+        if opt.gap_root_path = true then
+            gap_root_path := "../..";
+        elif opt.gap_root_path = false then
+            gap_root_path := false;
+        elif IsString( opt.gap_root_path ) then
+            gap_root_path := opt.gap_root_path;
+        else
+            Error( "gap_root_path option must be true, false, or a string" );
+        fi;
+    fi;
+    
     #
     # Setup the output directory
     #
@@ -514,10 +528,14 @@ function( arg )
         # of the documentation are also in UTF-8 encoding, and may contain characters
         # not contained in the default Latin 1 encoding.
         SetGapDocLaTeXOptions( "utf8", gapdoc_latex_option_record );
+        make_gap_doc_doc_argument_list := [ doc_dir, gapdoc.main, gapdoc.files, gapdoc.bookname, "MathJax" ];
+        if gap_root_path <> false then
+            Add( make_gap_doc_doc_argument_list, gap_root_path );
+        fi;
         if Filename(DirectoriesSystemPrograms(), "pdflatex") <> fail then
-            MakeGAPDocDoc( doc_dir, gapdoc.main, gapdoc.files, gapdoc.bookname, "MathJax" );
+            CallFuncList( MakeGAPDocDoc, make_gap_doc_doc_argument_list );
         else
-            AutoDoc_MakeGAPDocDoc_WithoutLatex( doc_dir, gapdoc.main, gapdoc.files, gapdoc.bookname, "MathJax" );
+            CallFuncList( AutoDoc_MakeGAPDocDoc_WithoutLatex, make_gap_doc_doc_argument_list );
         fi;
 
         CopyHTMLStyleFiles( Filename( doc_dir, "" ) );
