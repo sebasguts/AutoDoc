@@ -36,7 +36,7 @@ end );
 
 # Check whether the given directory exists, and if not, attempt
 # to create it.
-BindGlobal( "AUTODOC_CreateDirIfMissing",
+InstallGlobalFunction( AUTODOC_CreateDirIfMissing,
 function(d)
     local tmp;
     if not IsDirectoryPath(d) then

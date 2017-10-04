@@ -10,6 +10,8 @@
 ##
 #############################################################################
 
+DeclareGlobalFunction( "AUTODOC_CreateDirIfMissing" );
+
 #! @Chapter AutoDoc
 
 #! @Section The AutoDoc() function
