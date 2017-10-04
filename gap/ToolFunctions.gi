@@ -185,3 +185,84 @@ InstallGlobalFunction( AutoDoc_MakeGAPDocDoc_WithoutLatex,
 
   return r;
 end);
+
+BindGlobal( "AUTODOC_WriteDemoToFile",
+  
+  function( stream, example )
+    local split_string, current_line;
+    
+    split_string := SplitString( example, "\n" );
+    
+    for current_line in split_string do
+        current_line := NormalizedWhitespace( current_line );
+        if current_line = "" then
+            continue;
+        elif StartsWith( current_line, "gap>" ) then
+            PrintTo( stream, "%\n", NormalizedWhitespace( current_line{[ 5 .. Length( current_line ) ]} ), "\n" );
+        elif StartsWith( current_line, ">" ) then
+            PrintTo( stream, NormalizedWhitespace( current_line{[ 2 .. Length( current_line ) ]} ), "\n" );
+        fi;
+    od;
+    
+end );
+
+InstallGlobalFunction( AutoDocDemo,
+  
+  function( pkg_name, args... )
+    local options_rec, demo_dir, pkg_info, pkg_folder, example_list, read_file,
+          example_counter, file, current_output_file, description;
+    
+    if Length( args ) = 1 then
+        options_rec := args[ 1 ];
+    else
+        options_rec := rec( );
+    fi;
+    
+    AUTODOC_SetIfMissing( options_rec, "interactive", true );
+    AUTODOC_SetIfMissing( options_rec, "examples_folder", "doc" );
+    AUTODOC_SetIfMissing( options_rec, "MainXMLFile", Concatenation( pkg_name, ".xml" ) );
+    AUTODOC_SetIfMissing( options_rec, "folder", "demos" );
+    
+    pkg_info := PackageInfo( pkg_name )[ 1 ];
+    pkg_folder := pkg_info.InstallationPath;
+    
+    if options_rec.interactive = true then
+        demo_dir := DirectoryTemporary( );
+    else
+        demo_dir := AUTODOC_CreateDirIfMissing( Concatenation( pkg_folder, "/", options_rec.folder ) );
+        demo_dir := Directory( Concatenation( pkg_folder, "/", options_rec.folder ) );
+    fi;
+    
+    example_list := ExtractExamples( DirectoriesPackageLibrary( pkg_name, options_rec.examples_folder )[ 1 ],
+                                     options_rec.MainXMLFile, [ ], "none" );
+    
+    example_list := example_list[ 1 ];
+    
+    if not options_rec.interactive = true then
+        read_file := Filename( demo_dir, "readdemo.g" );
+        read_file := OutputTextFile( read_file, false );
+    fi;
+    
+    for example_counter in [ 1 .. Length( example_list ) ] do
+        
+        file := Filename( demo_dir, Concatenation( "Example", String( example_counter ) , ".demo" ) );
+        current_output_file := OutputTextFile( file, false );
+        AUTODOC_WriteDemoToFile( current_output_file, example_list[ example_counter ][ 1 ] );
+        CloseStream( current_output_file );
+        
+        description := Concatenation( "Example ", String( example_counter ), ", lines ", String( example_list[ example_counter ][ 2 ][ 2 ] ),
+                                      " - ", String( example_list[ example_counter ][ 2 ][ 3 ] ), " from file ", example_list[ example_counter ][ 2 ][ 1 ] );
+        
+        if options_rec.interactive = true then
+            LoadDemoFile( description, file );
+        else
+            PrintTo( read_file, "LoadDemoFile( \"", description, "\", \"", file, "\" );\n" );
+        fi;
+        
+    od;
+    
+    if not options_rec.interactive = true then
+        CloseStream( read_file );
+    fi;
+    
+end );
